@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import type { Artwork, NewArtwork, Tag } from "./types";
 import { DEMO_ARTWORKS } from "./data";
-import { getArtworks, createArtwork, deleteArtwork, subscribeArtwork } from "./api";
+import {
+  getArtworks,
+  createArtwork,
+  deleteArtwork,
+  subscribeArtwork,
+  updateArtwork,
+} from "./api";
 import { useAuth } from "./useAuth";
 import AuthScreen from "./components/AuthScreen";
 import ArtworkForm from "./components/ArtworkForm";
@@ -19,7 +25,9 @@ export default function App() {
   useEffect(() => {
     getArtworks()
       .then(setArtworks)
-      .catch(() => console.error("Couldn't reach the backend — showing sample pieces."));
+      .catch(() =>
+        console.error("Couldn't reach the backend — showing sample pieces."),
+      );
   }, []);
 
   if (!token || !user) {
@@ -46,7 +54,14 @@ export default function App() {
       console.error("Couldn't delete — it may not be yours.");
     }
   }
-
+  async function handleUpdate(id: string, input: Partial<NewArtwork>) {
+    try {
+      const updated = await updateArtwork(id, input, token!);
+      setArtworks((prev) => prev.map((a) => (a._id === id ? updated : a)));
+    } catch (err) {
+      console.error(err);
+    }
+  }
   async function handleSubscribe(id: string) {
     await subscribeArtwork(id, token!);
   }
@@ -83,6 +98,7 @@ export default function App() {
                 art={art}
                 mine={art.ownerId === user.id}
                 onDelete={handleDelete}
+                onUpdate={handleUpdate}
                 onSubscribe={handleSubscribe}
               />
             ))}
@@ -96,13 +112,17 @@ export default function App() {
     <div className="bb-root">
       <div className="bb-wrap">
         <header className="bb-head">
-          <div className="bb-brand">Art<span>Walls</span></div>
+          <div className="bb-brand">
+            Art<span>Walls</span>
+          </div>
           <div className="bb-user">
             <div className="bb-user-meta">
               <div className="bb-user-name">{user.name}</div>
               <div className="bb-wallet">{user.wallet} coins</div>
             </div>
-            <button className="bb-logout" onClick={logout}>Log out</button>
+            <button className="bb-logout" onClick={logout}>
+              Log out
+            </button>
           </div>
         </header>
 
@@ -118,13 +138,17 @@ export default function App() {
         {renderWall(
           "My wall",
           mineList,
-          filtersActive ? "None of your pieces match these filters." : "You haven't consigned anything yet."
+          filtersActive
+            ? "None of your pieces match these filters."
+            : "You haven't consigned anything yet.",
         )}
 
         {renderWall(
           "Community wall",
           communityList,
-          filtersActive ? "No community pieces match these filters." : "Nothing from other artists yet."
+          filtersActive
+            ? "No community pieces match these filters."
+            : "Nothing from other artists yet.",
         )}
       </div>
     </div>
